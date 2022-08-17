@@ -2,6 +2,9 @@ const path = require('path');
 const fs = require('fs');
 const express = require('express');
 var router = express.Router();
+var jwt = require('jsonwebtoken');
+const verify = require('../verify');
+require('dotenv').config();
 
 const Folder = require('../models/folderModel');
 
@@ -147,5 +150,71 @@ router.get('/stream', (req, res) => {
     
     videoStream.pipe(res);
 });
+
+
+router.post('/create-folder', verify, (req, res) => {
+  console.log(req.jwt);
+  const filePath = path.join(__dirname, '..', '..', 'private', req.jwt.folder_name);
+  console.log(filePath);
+  //const mkdirResult = fs.mkdirSync(filePath);
+  //Token process.env.JWT_SECRET
+  if (!fs.existsSync(filePath)){
+    try {
+      fs.mkdirSync(filePath);
+      res.status(200).json({folder_name: req.jwt.folder_name});
+    } catch (error) {
+      console.log(error);
+      res.status(400).json({error:"Create Folder error"});
+    }
+  }else{
+    let i = 1;
+
+    for(i; i<=50; ++i){
+      if(!fs.existsSync(`${filePath} (${i})`)){
+        fs.mkdirSync(`${filePath} (${i})`);
+        break;
+      }
+    }
+    if(i === 51){
+      res.status(400).send("Bro name your folders please");
+    }else{
+      res.status(200).json({folder_name: `${filePath} (${i})`});
+    }
+  }
+  
+});
+
+/*router.post('/create-folder-test', (req, res) => {
+  console.log(req.body);
+  const filePath = path.join(__dirname, '..', '..', 'private', req.body.folder_name);
+  console.log(filePath);
+  //const mkdirResult = fs.mkdirSync(filePath);
+  //Token process.env.JWT_SECRET
+  if (!fs.existsSync(filePath)){
+    try {
+      fs.mkdirSync(filePath);
+      res.status(200).json({folder_name: req.body.folder_name});
+    } catch (error) {
+      console.log(error);
+      res.status(400).send("Create Folder error");
+    }
+  }else{
+    let i = 1;
+
+    for(i; i<=50; ++i){
+      if(!fs.existsSync(`${filePath} (${i})`)){
+        fs.mkdirSync(`${filePath} (${i})`);
+        break;
+      }
+    }
+    if(i === 51){
+      res.status(400).send("Bro name your folders please");
+    }else{
+      res.status(200).json({folder_name: `${filePath} (${i})`});
+    }
+    
+  }
+  
+});*/
 
 module.exports = router;
